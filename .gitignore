@@ -21,4 +21,3 @@ Thumbs.db
 # GitGuardian / detect-secrets
 # (commit baseline, run hook locally)
 
-.github/workflows/
