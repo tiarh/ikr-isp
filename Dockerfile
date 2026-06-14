@@ -96,7 +96,15 @@ COPY --from=frontend /app/public/build ./public/build
 COPY . /app
 
 # Copy custom nginx config
+# Copy our nginx config (overrides webdevops defaults)
+# webdevops/php-nginx has a default 10-php.conf with <PHP_SOCKET> template
+# that fails to render. We need to either remove that or use it.
+# Our custom config uses 127.0.0.1:9000 directly (more portable).
 COPY docker/nginx-prod.conf /etc/nginx/conf.d/default.conf
+# Remove webdevops default conf.d files (they reference <PHP_SOCKET> placeholder)
+RUN rm -f /opt/docker/etc/nginx/conf.d/10-php.conf \
+         /opt/docker/etc/nginx/vhost.common.d/10-php.conf \
+         /opt/docker/etc/nginx/vhost.conf 2>/dev/null || true
 
 # Copy supervisord config (php-fpm + nginx + queue + scheduler)
 COPY docker/supervisord-prod.conf /etc/supervisord.conf
