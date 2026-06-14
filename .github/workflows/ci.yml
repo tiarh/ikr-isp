@@ -15,16 +15,10 @@ jobs:
         with:
           php-version: '8.2'
           extensions: pdo, pdo_mysql, gd, zip, intl, bcmath
-      - name: Install Composer deps (ignore known false-positive advisories)
-        run: |
-          # Pre-create writable dirs Laravel needs (post-autoload-dump triggers package:discover)
-          mkdir -p bootstrap/cache storage/framework/{cache/data,sessions,testing,views} storage/logs
-          chmod -R 0777 bootstrap/cache storage
-          ls -ld bootstrap/cache storage
-          # Install with --no-audit to honor policy.advisories.ignore-id
-          composer install --prefer-dist --no-progress --no-audit
-          # Verify package:discover actually ran successfully
-          ls -la bootstrap/cache/packages.php 2>/dev/null && echo "✓ package:discover succeeded" || echo "✗ package:discover FAILED"
+      - name: Pre-create writable Laravel dirs
+        run: mkdir -p bootstrap/cache storage/framework/cache/data storage/framework/sessions storage/framework/testing storage/framework/views storage/logs && chmod -R 0777 bootstrap/cache storage && ls -ld bootstrap/cache storage
+      - name: Install Composer deps
+        run: composer install --prefer-dist --no-progress --no-audit
       - name: PHP syntax check
         run: find app -name "*.php" -print0 | xargs -0 -n1 php -l
       - name: PHPStan (best-effort)
