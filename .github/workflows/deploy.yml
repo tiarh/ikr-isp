@@ -18,9 +18,10 @@ permissions:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}  # = tiarh/ikr-isp
-  # docker-metadata-action pushes with type=sha,format=short,prefix=sha-
-  # which generates 'sha-XXXXXXX' (7 chars). Use 'main' as fallback for manual triggers.
-  IMAGE_TAG: ${{ github.event_name == 'workflow_dispatch' && 'main' || format('sha-{0}', github.sha) }}
+  # Always deploy from the 'main' tag. The build pushes the latest commit
+  # to ghcr.io/tiarh/ikr-isp:main on every push, so this is always the
+  # most recent production image. Manual workflow_dispatch also uses main.
+  IMAGE_TAG: main
 
 jobs:
   test:
