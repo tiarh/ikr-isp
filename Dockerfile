@@ -43,7 +43,7 @@ RUN composer install \
 
 # Copy app source for autoload + post-autoload scripts
 COPY . /app
-RUN composer dump-autoload --optimize --no-dev --classmap-authoritative
+RUN composer dump-autoload --optimize --no-dev --classmap-authoritative --no-scripts
 
 # =============================================================================
 # Stage 3: Final runtime — php-fpm + nginx + queue worker
