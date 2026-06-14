@@ -28,11 +28,6 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
-    public function canAccessPanel(Panel $panel): bool
-    {
-        return $this->hasAnyRole(['admin', 'sales_leader', 'leader_teknisi']);
-    }
-
     public function teknisiOpenTicketCount(): int
     {
         try {
