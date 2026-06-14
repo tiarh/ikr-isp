@@ -1,0 +1,181 @@
+<?php
+
+namespace App\Services;
+
+use App\Enums\OltType;
+use App\Models\PsbOrder;
+use phpseclib3\Net\SSH2;
+use Illuminate\Support\Facades\Log;
+
+/**
+ * Interface untuk OLT provisioning.
+ */
+interface OltProvisionerInterface
+{
+    /**
+     * @return array{success:bool, log:array, onu_id:?string, error:?string}
+     */
+    public function provision(PsbOrder $order, string $sn, string $port, ?string $onuId, string $name, string $password): array;
+}
+
+/**
+ * ZTE C300 provisioner — SSH auto via phpseclib3.
+ *
+ * NOTE: Command-command di bawah ini adalah TEMPLATE yang perlu disesuaikan
+ * dengan firmware ZTE C300 aktual di lapangan. Selalu test di OLT non-prod dulu.
+ *
+ * Workflow (sesuai jawaban #4: beda work flow dgn HiOS):
+ *  1. detect ONU by serial number
+ *  2. register ONU di PON port
+ *  3. create service-port + VLAN
+ *  4. create PPPoE WAN profile
+ */
+class C300Provisioner implements OltProvisionerInterface
+{
+    private string $host;
+    private string $username;
+    private string $password;
+    private int $timeout;
+    private int $promptWait;
+    private int $vlan;
+
+    public function __construct()
+    {
+        $this->host       = config('psb.olt.c300.host', '192.168.1.1');
+        $this->username   = config('psb.olt.c300.user', 'admin');
+        $this->password   = config('psb.olt.c300.password', '');
+        $this->timeout    = config('psb.olt.c300.timeout', 30);
+        $this->promptWait = config('psb.olt.c300.prompt_wait', 3);
+        $this->vlan       = (int) env('OLT_C300_VLAN', 100);
+    }
+
+    public function provision(PsbOrder $order, string $sn, string $port, ?string $onuId, string $name, string $password): array
+    {
+        $log = [];
+        $onuId = $onuId ?: '1'; // default; production: query OLT for next free ID
+
+        try {
+            $ssh = new SSH2($this->host, 22, 10);
+            $ssh->setTimeout($this->timeout);
+
+            if (! $ssh->login($this->username, $this->password)) {
+                return [
+                    'success' => false,
+                    'log'     => ['login_failed'],
+                    'onu_id'  => null,
+                    'error'   => "SSH login failed to C300 ({$this->host})",
+                ];
+            }
+
+            $log[] = "Logged in to C300 ({$this->host})";
+            $ssh->write("enable\nconfigure terminal\n");
+            sleep(1);
+
+            // 1. detect ONU
+            $ssh->write("show gpon onu by sn {$sn}\n");
+            sleep($this->promptWait);
+            $detectOut = $ssh->read();
+            $log[] = "detect ONU SN={$sn}";
+
+            if (stripos($detectOut, $sn) === false) {
+                $ssh->exec('end');
+                $ssh->disconnect();
+                return [
+                    'success' => false,
+                    'log'     => $log,
+                    'onu_id'  => null,
+                    'error'   => "ONU with SN {$sn} not detected on OLT port {$port}. Check kabel fiber & ODP.",
+                ];
+            }
+
+            // 2. register ONU
+            $ssh->write("interface gpon {$port}\n");
+            sleep(1);
+            $ssh->write("onu {$onuId} sn {$sn}\n");
+            sleep(2);
+            $log[] = "ONU {$onuId} registered on port {$port}";
+
+            // 3. exit interface, ensure VLAN
+            $ssh->write("exit\n");
+            $ssh->write("vlan {$this->vlan}\n");
+            sleep(1);
+            $log[] = "VLAN {$this->vlan} ensured";
+
+            // 4. service-port
+            $ssh->write("service-port {$port} vport {$onuId} user-vlan {$this->vlan} vlan {$this->vlan}\n");
+            sleep(1);
+            $log[] = "Service-port bound";
+
+            // 5. PPPoE WAN profile
+            $ssh->write("pon-onu-mng {$port}:{$onuId}\n");
+            sleep(1);
+            $ssh->write("wan-ip 1 mode pppoe username {$name} password {$password}\n");
+            sleep(1);
+            $ssh->write("wan-ip 1 nat enable\n");
+            sleep(1);
+            $ssh->write("wan-ip 1 vlan {$this->vlan} tag-mode tag\n");
+            sleep(1);
+            $ssh->write("exit\n");
+            $ssh->write("end\n");
+            $ssh->write("write\n");
+            sleep(2);
+            $log[] = "PPPoE WAN applied: user={$name}";
+
+            $ssh->disconnect();
+
+            return [
+                'success' => true,
+                'log'     => $log,
+                'onu_id'  => $onuId,
+                'error'   => null,
+            ];
+        } catch (\Throwable $e) {
+            Log::error('C300 provision failed', [
+                'sn'  => $sn,
+                'err' => $e->getMessage(),
+            ]);
+            return [
+                'success' => false,
+                'log'     => $log,
+                'onu_id'  => null,
+                'error'   => $e->getMessage(),
+            ];
+        }
+    }
+}
+
+/**
+ * HiOS provisioner — MANUAL ONLY (jawaban #3: teknisi checklist).
+ * Real provisioning terjadi di router pelanggan oleh teknisi.
+ * Checklist items di psb_hioso_checklists yang tracking step-step manual.
+ */
+class HiosoProvisioner implements OltProvisionerInterface
+{
+    public function provision(PsbOrder $order, string $sn, string $port, ?string $onuId, string $name, string $password): array
+    {
+        return [
+            'success' => true,
+            'log'     => [
+                'hioso_manual' => true,
+                'instruction'  => "HiOS: teknisi input manual di router pelanggan. SN={$sn}, port={$port}, PPPoE user={$name}",
+                'next_step'    => 'teknisi isi checklist di psb_hioso_checklists',
+            ],
+            'onu_id'  => $onuId,
+            'error'   => null,
+        ];
+    }
+}
+
+/**
+ * Factory pilih provisioner berdasarkan OltType.
+ */
+class OltProvisionerFactory
+{
+    public static function make(OltType $type): OltProvisionerInterface
+    {
+        return match ($type) {
+            OltType::C300  => new C300Provisioner(),
+            OltType::Hioso => new HiosoProvisioner(),
+        };
+    }
+}

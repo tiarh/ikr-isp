@@ -1,0 +1,117 @@
+services:
+  app:
+    image: webdevops/php-nginx:8.2-alpine
+    container_name: skynet-ikr-app
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - ./:/app
+      - ikr-storage:/app/storage
+    networks:
+      - skynet-internal
+    ports:
+      - "8080:8080"
+    environment:
+      - APP_ENV=production
+      - APP_DEBUG=false
+      - APP_URL=https://ikr.sky.net.id
+      - DB_HOST=db
+      - DB_DATABASE=ikr_isp
+      - DB_USERNAME=ikr_isp
+      - DB_PASSWORD=${DB_PASSWORD}
+      - SALESKIT_DB_HOST=${SALESKIT_DB_HOST}
+      - SALESKIT_DB_DATABASE=${SALESKIT_DB_DATABASE}
+      - SALESKIT_DB_USERNAME=${SALESKIT_DB_USERNAME}
+      - SALESKIT_DB_PASSWORD=${SALESKIT_DB_PASSWORD}
+      - EBILLING_DB_HOST=${EBILLING_DB_HOST}
+      - EBILLING_DB_DATABASE=${EBILLING_DB_DATABASE}
+      - EBILLING_DB_USERNAME=${EBILLING_DB_USERNAME}
+      - EBILLING_DB_PASSWORD=${EBILLING_DB_PASSWORD}
+      - REDIS_HOST=redis
+      - QUEUE_CONNECTION=redis
+    depends_on:
+      - db
+      - redis
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  queue:
+    image: webdevops/php-nginx:8.2-alpine
+    container_name: skynet-ikr-queue
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - ./:/app
+      - ikr-storage:/app/storage
+    networks:
+      - skynet-internal
+    command: ["php", "artisan", "queue:work", "--tries=3", "--sleep=3", "--timeout=60"]
+    environment:
+      - APP_ENV=production
+      - DB_HOST=db
+      - DB_DATABASE=ikr_isp
+      - DB_USERNAME=ikr_isp
+      - DB_PASSWORD=${DB_PASSWORD}
+      - REDIS_HOST=redis
+      - QUEUE_CONNECTION=redis
+    depends_on:
+      - app
+      - redis
+
+  scheduler:
+    image: webdevops/php-nginx:8.2-alpine
+    container_name: skynet-ikr-scheduler
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - ./:/app
+      - ikr-storage:/app/storage
+    networks:
+      - skynet-internal
+    command: >
+      sh -c "while true; do
+        php artisan schedule:run --no-interaction;
+        sleep 60;
+      done"
+    environment:
+      - APP_ENV=production
+      - DB_HOST=db
+      - DB_DATABASE=ikr_isp
+      - DB_USERNAME=ikr_isp
+      - DB_PASSWORD=${DB_PASSWORD}
+    depends_on:
+      - app
+
+  db:
+    image: mysql:8.0
+    container_name: skynet-ikr-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ikr_isp
+      MYSQL_USER: ikr_isp
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - ikr-mysql:/var/lib/mysql
+    networks:
+      - skynet-internal
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: skynet-ikr-redis
+    restart: unless-stopped
+    networks:
+      - skynet-internal
+
+volumes:
+  ikr-mysql:
+  ikr-storage:
+
+networks:
+  skynet-internal:
+    driver: bridge
