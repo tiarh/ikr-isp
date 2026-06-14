@@ -15,45 +15,23 @@ jobs:
         with:
           php-version: '8.2'
           extensions: pdo, pdo_mysql, gd, zip, intl, bcmath
-      - name: Pre-create writable Laravel dirs
-        run: mkdir -p bootstrap/cache storage/framework/cache/data storage/framework/sessions storage/framework/testing storage/framework/views storage/logs && chmod -R 0777 bootstrap/cache storage && ls -ld bootstrap/cache storage
-      - name: DEBUG: check PHP writable
+      - name: 'Pre-create writable Laravel dirs'
         run: |
-          echo '=== id ===' && id
-          echo '=== stat ===' && stat bootstrap/cache
-          echo '=== PHP is_writable ===' && php -r 'var_dump(is_writable("bootstrap/cache"));'
-          echo '=== touch test ===' && touch bootstrap/cache/test.txt && echo 'touched OK' || echo 'touched FAIL'
-          echo '=== run package:discover manually ===' && php artisan package:discover --ansi 2>&1 | head -10
+          mkdir -p bootstrap/cache storage/framework/cache/data storage/framework/sessions storage/framework/testing storage/framework/views storage/logs
+          chmod -R 0777 bootstrap/cache storage
+          ls -ld bootstrap/cache storage
       - name: 'Install Composer deps (CI override: dontdiscover all + strip scripts)'
         env:
           COMPOSER_NO_SCRIPTS: '1'
-          COMPOSER_DISABLE_NETWORK: '0'
         run: |
-          # Backup real composer.json
           cp composer.json composer.json.real
-          # Strip scripts that need .env/DB, add dont-discover
-          python3 -c "
-import json
-d = json.load(open('composer.json'))
-d['scripts'] = {}
-d.setdefault('extra', {}).setdefault('laravel', {})['dont-discover'] = ['*']
-json.dump(d, open('composer.json', 'w'), indent=4)
-"
-          # Use env var COMPOSER_NO_SCRIPTS=1 (in addition to --no-scripts flag)
+          python3 scripts/ci_composer_patch.py
           composer install --prefer-dist --no-progress --no-audit --no-scripts --no-plugins --no-autoloader
-          # Manually run autoload generation (no scripts event will trigger)
           composer dump-autoload --no-scripts --no-plugins
-          # DEBUG: Check who PHP runs as and what's writable
-          echo '=== WHO AM I ===' && id
-          echo '=== BOOTSTRAP/CACHE PERMS ===' && stat bootstrap/cache
-          echo '=== PHP Writable test ===' && php -r 'var_dump(is_writable("bootstrap/cache"));'
-          echo '=== Try direct write ===' && touch bootstrap/cache/test.txt && echo 'touched OK' || echo 'touched FAIL'
-          echo '=== Run package:discover manually ===' && php artisan package:discover --ansi 2>&1 | head -10 || echo 'artisan failed' 
-          # Restore real composer.json for any subsequent steps
           mv composer.json.real composer.json
-      - name: PHP syntax check
+      - name: 'PHP syntax check'
         run: find app -name "*.php" -print0 | xargs -0 -n1 php -l
-      - name: PHPStan (best-effort)
+      - name: 'PHPStan (best-effort)'
         run: |
           if [ -f vendor/bin/phpstan ]; then
             vendor/bin/phpstan analyse app --level=3 --no-progress || true
@@ -66,23 +44,23 @@ json.dump(d, open('composer.json', 'w'), indent=4)
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Install npm deps (fallback ke install kalau lockfile gak ada)
+      - name: 'Install npm deps (fallback ke install kalau lockfile gak ada)'
         run: |
           if [ -f package-lock.json ]; then
             npm ci --prefer-offline --no-audit
           else
             npm install --prefer-offline --no-audit --no-fund
           fi
-      - name: ESLint
+      - name: 'ESLint'
         run: npx eslint resources/js --ext .ts,.tsx --max-warnings=50 || true
 
   secrets-scan:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install detect-secrets
+      - name: 'Install detect-secrets'
         run: pip install --user detect-secrets
-      - name: Scan
+      - name: 'Scan'
         run: |
           python3 -m detect_secrets scan --exclude-files '\.git/.*' --exclude-files 'node_modules/.*' --exclude-files 'vendor/.*' > .secrets.scan.tmp || true
           if [ -f .secrets.baseline ]; then
