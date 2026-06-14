@@ -116,7 +116,17 @@ COPY docker/supervisord-prod.conf /etc/supervisord.conf
 RUN php artisan package:discover --ansi || true
 
 # Permissions
-RUN mkdir -p /app/bootstrap/cache /app/storage/framework/{cache/data,sessions,testing,views} /app/storage/logs \
+# Create ALL standard Laravel writable directories explicitly (not brace expansion,
+# because Alpine busybox sh doesn't expand braces the same as bash).
+RUN mkdir -p \
+        /app/bootstrap/cache \
+        /app/storage/app/public \
+        /app/storage/framework/cache/data \
+        /app/storage/framework/sessions \
+        /app/storage/framework/testing \
+        /app/storage/framework/views \
+        /app/storage/logs \
+        /app/storage/app \
     && chown -R application:application /app \
     && chmod -R 775 /app/storage /app/bootstrap/cache
 
