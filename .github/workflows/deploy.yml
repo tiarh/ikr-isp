@@ -146,6 +146,8 @@ jobs:
             set -e
             export APP_IMAGE_TAG=${{ env.IMAGE_TAG }}
             cd /opt/ikr-isp
+            # Sync production stack files from repo (in case compose/Dockerfile changed)
+            curl -fsSL https://raw.githubusercontent.com/tiarh/ikr-isp/main/docker-compose.prod.yml -o docker-compose.prod.yml
             # Pull image baru
             docker compose -f docker-compose.prod.yml --env-file .env pull app
             # Restart app container (queue + scheduler ada di dalam image yg sama)
