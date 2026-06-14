@@ -22,7 +22,5 @@ require __DIR__ . '/psb.php';
 // API routes
 require __DIR__ . '/api.php';
 
-// Filament admin
-Route::prefix('admin')->group(function () {
-    // Filament handles its own routes via AdminPanelProvider
-});
+// Admin (Inertia-based, role-gated)
+require __DIR__ . '/admin.php';
