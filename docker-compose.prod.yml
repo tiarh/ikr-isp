@@ -78,13 +78,12 @@ services:
 networks:
   ikr-internal:
     driver: bridge
+  # skynet-ebilling_default is the network used by skynet-ebilling (mysql, redis, etc).
+  # Connecting to it gives this app access to existing MySQL/Redis without
+  # running them inside this compose.
   skynet-shared:
     external: true
-    name: skynet_default
-  # Kalau mau connect ke existing skynet-ebilling, pakai:
-  # skynet-shared:
-  #   external: true
-  #   name: skynet-ebilling_default
+    name: skynet-ebilling_default
 
 volumes:
   ikr-mysql-data:
