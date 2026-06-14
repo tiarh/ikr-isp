@@ -7,7 +7,11 @@ WORKDIR /app
 
 # Install deps dulu (cache layer)
 COPY package.json package-lock.json* ./
-RUN npm ci --prefer-offline --no-audit --no-fund || npm install --prefer-offline --no-audit --no-fund
+RUN if [ -f package-lock.json ]; then \
+      npm ci --prefer-offline --no-audit --no-fund; \
+    else \
+      npm install --prefer-offline --no-audit --no-fund; \
+    fi
 
 # Copy source & build
 COPY vite.config.js tailwind.config.js postcss.config.js ./
@@ -31,7 +35,8 @@ RUN composer install \
     --no-progress \
     --prefer-dist \
     --optimize-autoloader \
-    --no-scripts
+    --no-scripts \
+    --no-security-blocking
 
 # Copy app source for autoload + post-autoload scripts
 COPY . /app
