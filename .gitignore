@@ -16,3 +16,6 @@
 /vendor
 .DS_Store
 Thumbs.db
+
+# Temporary: CI workflow pushed separately to bypass PAT scope
+.github/workflows/
