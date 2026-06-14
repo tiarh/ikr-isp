@@ -16,7 +16,10 @@ jobs:
           php-version: '8.2'
           extensions: pdo, pdo_mysql, gd, zip, intl, bcmath
       - name: Install Composer deps (ignore known false-positive advisories, no artisan scripts)
-        run: composer install --prefer-dist --no-progress --no-audit --no-scripts
+        run: |
+          mkdir -p bootstrap/cache storage/framework/{cache/data,sessions,testing,views} storage/logs
+          chmod -R 775 bootstrap/cache storage
+          composer install --prefer-dist --no-progress --no-audit --no-scripts --no-plugins
       - name: PHP syntax check
         run: find app -name "*.php" -print0 | xargs -0 -n1 php -l
       - name: PHPStan (best-effort)
