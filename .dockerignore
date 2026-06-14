@@ -1,0 +1,56 @@
+# Git
+.git
+.gitignore
+.gitattributes
+.github
+.githooks
+.gitlab-ci.yml
+
+# CI/CD
+.secrets.baseline
+.secrets.scan.tmp
+
+# Editor
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# Node
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn
+.pnp.*
+
+# Laravel runtime
+storage/logs/*
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/testing/*
+storage/framework/views/*
+storage/*.key
+bootstrap/cache/*
+
+# Local env (jangan bake ke image)
+.env
+.env.*
+!.env.example
+!.env.production.example
+
+# Test artifacts
+.phpunit.cache
+.phpunit.result.cache
+storage/coverage
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backup
+*.tar.gz
+*.tgz
+*.zip
