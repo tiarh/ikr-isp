@@ -17,6 +17,13 @@ jobs:
           extensions: pdo, pdo_mysql, gd, zip, intl, bcmath
       - name: Pre-create writable Laravel dirs
         run: mkdir -p bootstrap/cache storage/framework/cache/data storage/framework/sessions storage/framework/testing storage/framework/views storage/logs && chmod -R 0777 bootstrap/cache storage && ls -ld bootstrap/cache storage
+      - name: DEBUG: check PHP writable
+        run: |
+          echo '=== id ===' && id
+          echo '=== stat ===' && stat bootstrap/cache
+          echo '=== PHP is_writable ===' && php -r 'var_dump(is_writable("bootstrap/cache"));'
+          echo '=== touch test ===' && touch bootstrap/cache/test.txt && echo 'touched OK' || echo 'touched FAIL'
+          echo '=== run package:discover manually ===' && php artisan package:discover --ansi 2>&1 | head -10
       - name: Install Composer deps (CI override: dont-discover all + strip scripts)
         env:
           COMPOSER_NO_SCRIPTS: '1'
