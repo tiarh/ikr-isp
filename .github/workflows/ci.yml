@@ -24,7 +24,7 @@ jobs:
           echo '=== PHP is_writable ===' && php -r 'var_dump(is_writable("bootstrap/cache"));'
           echo '=== touch test ===' && touch bootstrap/cache/test.txt && echo 'touched OK' || echo 'touched FAIL'
           echo '=== run package:discover manually ===' && php artisan package:discover --ansi 2>&1 | head -10
-      - name: Install Composer deps (CI override: dont-discover all + strip scripts)
+      - name: 'Install Composer deps (CI override: dontdiscover all + strip scripts)'
         env:
           COMPOSER_NO_SCRIPTS: '1'
           COMPOSER_DISABLE_NETWORK: '0'
