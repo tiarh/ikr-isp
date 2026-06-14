@@ -36,7 +36,10 @@ RUN composer install \
     --prefer-dist \
     --optimize-autoloader \
     --no-scripts \
-    --no-security-blocking
+    --no-security-blocking \
+    --ignore-platform-req=ext-exif \
+    --ignore-platform-req=ext-gd \
+    --ignore-platform-req=ext-intl
 
 # Copy app source for autoload + post-autoload scripts
 COPY . /app
