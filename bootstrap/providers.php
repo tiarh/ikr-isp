@@ -2,6 +2,7 @@
 
 return [
     App\Providers\AppServiceProvider::class,
+    Filament\Support\SupportServiceProvider::class,
     App\Providers\PsbServiceProvider::class,
     Livewire\LivewireServiceProvider::class,
     Filament\FilamentServiceProvider::class,
