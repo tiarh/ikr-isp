@@ -48,7 +48,7 @@ RUN composer dump-autoload --optimize --no-dev --classmap-authoritative --no-scr
 # =============================================================================
 # Stage 3: Final runtime — php-fpm + nginx + queue worker
 # =============================================================================
-FROM webdevops/php-nginx:8.2-alpine
+FROM webdevops/php-nginx:8.4-alpine
 
 # Install required PHP extensions + system deps
 RUN apk add --no-cache \
