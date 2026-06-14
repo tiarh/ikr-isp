@@ -46,10 +46,5 @@ class AppServiceProvider extends ServiceProvider
         Blade::directive('viteReactRefresh', function () {
             return '<?php echo app("Illuminate\\Foundation\\Vite")->reactRefresh(); ?>';
         });
-
-        // Inertia v2 @routes directive (emits JS routes for client-side router)
-        Blade::directive('routes', function () {
-            return '<?php echo \Inertia\Inertia::routes(); ?>';
-        });
     }
 }
