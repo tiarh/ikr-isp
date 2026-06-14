@@ -120,7 +120,7 @@ jobs:
     if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.deploy)
     environment:
       name: production
-      url: http://${{ secrets.VPS_HOST }}:8080
+      url: http://ikr.sky.net.id:8080
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
