@@ -49,7 +49,7 @@ jobs:
           # Strip scripts that need .env/DB, add dont-discover
           python3 /tmp/_ci_composer_patch.py
           # Install with --no-scripts (CI override)
-          composer install --prefer-dist --no-progress --no-audit --no-scripts --no-plugins --no-autoloader
+          composer install --prefer-dist --no-progress --no-security-blocking --no-scripts --no-plugins --no-autoloader
           composer dump-autoload --no-scripts --no-plugins
           # Restore real composer.json for any subsequent steps
           mv composer.json.real composer.json
@@ -71,9 +71,9 @@ jobs:
       - name: Install npm deps (fallback ke install kalau lockfile gak ada)
         run: |
           if [ -f package-lock.json ]; then
-            npm ci --prefer-offline --no-audit
+            npm ci --prefer-offline --no-security-blocking
           else
-            npm install --prefer-offline --no-audit --no-fund
+            npm install --prefer-offline --no-security-blocking --no-fund
           fi
 
       - name: ESLint

@@ -26,7 +26,7 @@ jobs:
         run: |
           cp composer.json composer.json.real
           python3 scripts/ci_composer_patch.py
-          composer install --prefer-dist --no-progress --no-audit --no-scripts --no-plugins --no-autoloader
+          composer install --prefer-dist --no-progress --no-security-blocking --no-scripts --no-plugins --no-autoloader
           composer dump-autoload --no-scripts --no-plugins
           mv composer.json.real composer.json
       - name: 'PHP syntax check'
@@ -47,9 +47,9 @@ jobs:
       - name: 'Install npm deps (fallback ke install kalau lockfile gak ada)'
         run: |
           if [ -f package-lock.json ]; then
-            npm ci --prefer-offline --no-audit
+            npm ci --prefer-offline --no-security-blocking
           else
-            npm install --prefer-offline --no-audit --no-fund
+            npm install --prefer-offline --no-security-blocking --no-fund
           fi
       - name: 'ESLint'
         run: npx eslint resources/js --ext .ts,.tsx --max-warnings=50 || true
