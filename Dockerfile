@@ -112,12 +112,8 @@ RUN rm -f /opt/docker/etc/nginx/conf.d/10-php.conf \
 # Copy supervisord config (php-fpm + nginx + queue + scheduler)
 COPY docker/supervisord-prod.conf /etc/supervisord.conf
 
-# Generate optimized configs
-RUN php artisan package:discover --ansi || true
-
-# Permissions
-# Create ALL standard Laravel writable directories explicitly (not brace expansion,
-# because Alpine busybox sh doesn't expand braces the same as bash).
+# Create ALL standard Laravel writable directories BEFORE any artisan command
+# (Alpine busybox sh doesn't expand braces like bash, so list each dir explicitly)
 RUN mkdir -p \
         /app/bootstrap/cache \
         /app/storage/app/public \
@@ -128,6 +124,13 @@ RUN mkdir -p \
         /app/storage/logs \
         /app/storage/app \
     && chown -R application:application /app \
+    && chmod -R 775 /app/storage /app/bootstrap/cache
+
+# Generate optimized configs (after dirs exist)
+RUN php artisan package:discover --ansi || true
+
+# Re-confirm permissions (package:discover may have created new files)
+RUN chown -R application:application /app \
     && chmod -R 775 /app/storage /app/bootstrap/cache
 
 # Health check
