@@ -57,6 +57,13 @@ RUN apk add --no-cache \
     redis \
     bash \
     tini \
+    zlib-dev \
+    libpng-dev \
+    libjpeg-turbo-dev \
+    freetype-dev \
+    icu-dev \
+    oniguruma-dev \
+    libzip-dev \
     && docker-php-ext-install -j$(nproc) \
         bcmath \
         gd \
