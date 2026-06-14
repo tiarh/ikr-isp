@@ -17,8 +17,21 @@ jobs:
           extensions: pdo, pdo_mysql, gd, zip, intl, bcmath
       - name: Pre-create writable Laravel dirs
         run: mkdir -p bootstrap/cache storage/framework/cache/data storage/framework/sessions storage/framework/testing storage/framework/views storage/logs && chmod -R 0777 bootstrap/cache storage && ls -ld bootstrap/cache storage
-      - name: Install Composer deps
-        run: composer install --prefer-dist --no-progress --no-audit
+      - name: Install Composer deps (CI override: dont-discover all + strip scripts)
+        run: |
+          # Backup real composer.json
+          cp composer.json composer.json.real
+          # Strip scripts that need .env/DB, add dont-discover
+          python3 -c "
+import json
+d = json.load(open('composer.json'))
+d['scripts'] = {}
+d.setdefault('extra', {}).setdefault('laravel', {})['dont-discover'] = ['*']
+json.dump(d, open('composer.json', 'w'), indent=4)
+"
+          composer install --prefer-dist --no-progress --no-audit --no-scripts --no-plugins
+          # Restore real composer.json for any subsequent steps
+          mv composer.json.real composer.json
       - name: PHP syntax check
         run: find app -name "*.php" -print0 | xargs -0 -n1 php -l
       - name: PHPStan (best-effort)
