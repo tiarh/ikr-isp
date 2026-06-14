@@ -2,8 +2,6 @@
 
 namespace App\Models;
 
-use Filament\Models\Contracts\FilamentUser;
-use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -17,7 +15,7 @@ use Spatie\Permission\Traits\HasRoles;
  * Untuk simplicity: kita punya table users lokal yang isinya mirror dari saleskit
  * (sync via job tiap 1 jam). Bisa juga langsung query saleskit.users via connection().
  */
-class User extends Authenticatable implements FilamentUser
+class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, HasRoles, Notifiable;
 
