@@ -105,7 +105,8 @@ COPY docker/supervisord-prod.conf /etc/supervisord.conf
 RUN php artisan package:discover --ansi || true
 
 # Permissions
-RUN chown -R application:application /app \
+RUN mkdir -p /app/bootstrap/cache /app/storage/framework/{cache/data,sessions,testing,views} /app/storage/logs \
+    && chown -R application:application /app \
     && chmod -R 775 /app/storage /app/bootstrap/cache
 
 # Health check
