@@ -19,7 +19,19 @@ jobs:
         run: |
           mkdir -p bootstrap/cache storage/framework/{cache/data,sessions,testing,views} storage/logs
           chmod -R 775 bootstrap/cache storage
+          # Copy composer.json, strip scripts that need DB/.env, install from stripped
+          cp composer.json composer.json.bak
+          python3 -c "
+import json
+d = json.load(open('composer.json'))
+d['scripts'] = {}
+json.dump(d, open('composer.json', 'w'), indent=4)
+"
           composer install --prefer-dist --no-progress --no-audit --no-scripts --no-plugins
+          # Restore original composer.json
+          mv composer.json.bak composer.json
+          # Explicit dump-autoload (no scripts)
+          composer dump-autoload --no-scripts --no-dev-optimize 2>/dev/null || composer dump-autoload --no-scripts
       - name: PHP syntax check
         run: find app -name "*.php" -print0 | xargs -0 -n1 php -l
       - name: PHPStan (best-effort)
