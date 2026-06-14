@@ -36,6 +36,12 @@ json.dump(d, open('composer.json', 'w'), indent=4)
           composer install --prefer-dist --no-progress --no-audit --no-scripts --no-plugins --no-autoloader
           # Manually run autoload generation (no scripts event will trigger)
           composer dump-autoload --no-scripts --no-plugins
+          # DEBUG: Check who PHP runs as and what's writable
+          echo '=== WHO AM I ===' && id
+          echo '=== BOOTSTRAP/CACHE PERMS ===' && stat bootstrap/cache
+          echo '=== PHP Writable test ===' && php -r 'var_dump(is_writable("bootstrap/cache"));'
+          echo '=== Try direct write ===' && touch bootstrap/cache/test.txt && echo 'touched OK' || echo 'touched FAIL'
+          echo '=== Run package:discover manually ===' && php artisan package:discover --ansi 2>&1 | head -10 || echo 'artisan failed' 
           # Restore real composer.json for any subsequent steps
           mv composer.json.real composer.json
       - name: PHP syntax check
