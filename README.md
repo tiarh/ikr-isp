@@ -28,22 +28,25 @@ draft → submitted → coverage_ok → assigned → provisioning → photos →
 6. **Teknisi**: 6 foto + redaman + GPS + HiOS checklist (kalo HiOS) + BAI ttd digital → PDF
 7. **Sync**: fullSync ke eBilling (customer + invoice + RADIUS + upload 6 foto + BAI)
 
-## Quick Start (Dev)
+## Demo Login (WAJIB GANTI setelah first login)
 
-```bash
-composer install
-npm install
-cp .env.example .env
-php artisan key:generate
+| Email | Role | Default Password |
+|---|---|---|
+| `admin@ikr.local`       | admin          | `CHANGE_ME` (ganti!) |
+| `sales@ikr.local`       | sales          | `CHANGE_ME` (ganti!) |
+| `salesleader@ikr.local` | sales_leader   | `CHANGE_ME` (ganti!) |
+| `leadteknisi@ikr.local` | leader_teknisi | `CHANGE_ME` (ganti!) |
+| `teknisi1@ikr.local`    | teknisi        | `CHANGE_ME` (ganti!) |
+| `teknisi2@ikr.local`    | teknisi        | `CHANGE_ME` (ganti!) |
 
-# Edit .env: set DB_HOST, SALESKIT_DB_*, EBILLING_DB_*, dll
-php artisan migrate --seed
-npm run dev
+**PENTING:** Default password string di-hash bcrypt di `database/seeders/DatabaseSeeder.php`. Plaintext di-print ke console **sekali** pas `php artisan db:seed` — **COPY + GANTI** setelah first login via Filament admin panel (`/admin/users`).
 
-php artisan serve
+Atau via `php artisan tinker`:
+
+```php
+User::where('email', 'admin@ikr.local')->update(['password' => bcrypt(getenv('NEW_ADMIN_PASS'))]);
+# atau lebih aman: buka Filament panel, edit user, set password baru via UI
 ```
-
-Login: `admin@ikr.local` / `password` (atau sales/salesleader/leadteknisi/teknisi1/2@ikr.local).
 
 ## Test
 

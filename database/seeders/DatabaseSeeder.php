@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Permission;
+use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 
 class DatabaseSeeder extends Seeder
@@ -18,31 +18,41 @@ class DatabaseSeeder extends Seeder
             Role::firstOrCreate(['name' => $r, 'guard_name' => 'web']);
         }
 
-        // Default admin
-        $admin = User::firstOrCreate(
-            ['email' => 'admin@ikr.local'],
-            [
-                'name'     => 'Admin IKR',
-                'password' => Hash::make('password'),
-                'phone'    => '081234567890',
-            ]
-        );
-        $admin->assignRole('admin');
+        // Default marker — bcrypt dari string literal "CHANGE_ME_"
+        // supaya GitGuardian tidak flag dan operator WAJIB ganti.
+        // Lihat SECURITY.md.
+        $defaultPlain = 'CHANGE_ME_' . Str::random(8);
+        $defaultHash  = Hash::make($defaultPlain);
 
-        // Demo users (password: 'password')
-        $demo = [
-            ['name' => 'Demo Sales',       'email' => 'sales@ikr.local',       'role' => 'sales'],
-            ['name' => 'Demo SalesLeader', 'email' => 'salesleader@ikr.local', 'role' => 'sales_leader'],
-            ['name' => 'Demo LeaderTeknisi','email' => 'leadteknisi@ikr.local','role' => 'leader_teknisi'],
-            ['name' => 'Demo Teknisi 1',   'email' => 'teknisi1@ikr.local',    'role' => 'teknisi'],
-            ['name' => 'Demo Teknisi 2',   'email' => 'teknisi2@ikr.local',    'role' => 'teknisi'],
+        // Cetak plaintext password HANYA di console saat seeding
+        $this->command->warn('=== DEFAULT DEMO PASSWORDS (COPY NOW, UBAH setelah first login) ===');
+        $this->command->warn("admin@ikr.local       : {$defaultPlain}");
+        $this->command->warn("sales@ikr.local       : {$defaultPlain}");
+        $this->command->warn("salesleader@ikr.local : {$defaultPlain}");
+        $this->command->warn("leadteknisi@ikr.local : {$defaultPlain}");
+        $this->command->warn("teknisi1@ikr.local    : {$defaultPlain}");
+        $this->command->warn("teknisi2@ikr.local    : {$defaultPlain}");
+        $this->command->warn('=====================================================================');
+
+        $defaults = [
+            ['name' => 'Admin IKR',         'email' => 'admin@ikr.local',       'phone' => '081234567890', 'role' => 'admin'],
+            ['name' => 'Demo Sales',        'email' => 'sales@ikr.local',       'phone' => '081234567891', 'role' => 'sales'],
+            ['name' => 'Demo SalesLeader',  'email' => 'salesleader@ikr.local', 'phone' => '081234567892', 'role' => 'sales_leader'],
+            ['name' => 'Demo LeaderTeknisi','email' => 'leadteknisi@ikr.local', 'phone' => '081234567893', 'role' => 'leader_teknisi'],
+            ['name' => 'Demo Teknisi 1',    'email' => 'teknisi1@ikr.local',    'phone' => '081234567894', 'role' => 'teknisi'],
+            ['name' => 'Demo Teknisi 2',    'email' => 'teknisi2@ikr.local',    'phone' => '081234567895', 'role' => 'teknisi'],
         ];
-        foreach ($demo as $u) {
+
+        foreach ($defaults as $d) {
             $user = User::firstOrCreate(
-                ['email' => $u['email']],
-                ['name' => $u['name'], 'password' => Hash::make('password'), 'phone' => '081234567891']
+                ['email' => $d['email']],
+                [
+                    'name'     => $d['name'],
+                    'password' => $defaultHash,
+                    'phone'    => $d['phone'],
+                ]
             );
-            $user->assignRole($u['role']);
+            $user->assignRole($d['role']);
         }
     }
 }

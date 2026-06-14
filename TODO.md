@@ -20,6 +20,13 @@ Item-item yang masih perlu lo handle sebelum production:
       ATAU run manual: `ALTER TABLE skynet_saleskit.registrations ADD COLUMN router_name VARCHAR(100) NULL AFTER package`
 - [ ] Update Saleskit form input registration → tambahkan field "Nama Router" (wajib)
 
+## Token Rotation (WAJIB sebelum production)
+- [ ] Ganti SEMUA `_PASSWORD` / `_KEY` / `_SECRET` di `.env` (lihat SECURITY.md §1)
+- [ ] Ganti password semua user demo via Filament `/admin/users` (password default di-print pas `db:seed`)
+- [ ] Generate ulang `APP_KEY` (kalo migrate ke VPS baru)
+- [ ] Setup `.secrets.baseline` di CI agar GitGuardian tidak false-positive (sudah ada di repo)
+- [ ] Mark GitGuardian alert "Resolved" setelah confirm semua fix
+
 ## Di MikroTik
 - [ ] Test koneksi SSH ke OLT C300 (phpseclib3\Net\SSH2)
 - [ ] Test RouterOS API utk add PPPoE secret

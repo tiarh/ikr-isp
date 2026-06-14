@@ -17,5 +17,8 @@
 .DS_Store
 Thumbs.db
 
-# Temporary: CI workflow pushed separately to bypass PAT scope
+
+# GitGuardian / detect-secrets
+# (commit baseline, run hook locally)
+
 .github/workflows/

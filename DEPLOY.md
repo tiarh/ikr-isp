@@ -24,7 +24,7 @@ npm run build
 
 # Copy env
 cp .env.production.example .env
-nano .env   # edit password + URL
+nano .env   # edit semua *_PASSWORD / *_KEY / *_SECRET (lihat SECURITY.md)
 
 # Generate key
 php artisan key:generate
@@ -167,7 +167,7 @@ CREATE INDEX idx_router_name ON skynet_saleskit.registrations(router_name);
 # 1. Login admin
 curl -X POST https://ikr.sky.net.id/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@ikr.local","password":"password"}'
+  -d '{"email":"admin@ikr.local","password":"<DEMO_PASS_FROM_SEEDER>"}'
 
 # 2. Create test PSB (sebagai sales)
 # 3. Approve coverage (sebagai sales_leader)

@@ -1,0 +1,24 @@
+#!/bin/sh
+# Pre-commit hook: block commits that introduce NEW secrets
+# Install: cp .githooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+
+set -e
+
+if [ -f .secrets.baseline ]; then
+    echo "🔍 Running detect-secrets scan..."
+    # If any NEW secret found (not in baseline), fail the commit
+    if detect-secrets-hook --baseline .secrets.baseline; then
+        echo "✅ No new secrets detected"
+    else
+        echo ""
+        echo "❌ COMMIT BLOCKED: detect-secrets found new potential secrets"
+        echo ""
+        echo "Action: Review findings with 'detect-secrets scan --baseline .secrets.baseline'"
+        echo "If false positive: 'detect-secrets scan --baseline .secrets.baseline --update'"
+        echo "If real secret: rotate token, update .env, then re-scan"
+        echo ""
+        exit 1
+    fi
+else
+    echo "⚠ .secrets.baseline not found, skipping scan"
+fi

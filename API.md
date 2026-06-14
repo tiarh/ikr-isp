@@ -21,8 +21,11 @@ GET    /olt-assets?area_id=            List OLT assets
 
 ```
 POST   /olt/provision
-body: { psb_order_id, sn, port, onu_id?, name, password }
+body: { psb_order_id, sn, port, onu_id?, name, pppoe_secret }
 ```
+
+> `pppoe_secret` di body adalah plain-text PPPoE password yg akan di-set di ONT.
+> Dikirim via HTTPS only. Server tidak menyimpan log body.
 
 ## Teknisi
 

@@ -1,0 +1,27 @@
+# Auto-detect text vs binary
+* text=auto eol=lf whitespace=trim-with-tabs
+
+# Force LF line endings di semua source code
+*.php    text eol=lf
+*.js     text eol=lf
+*.ts     text eol=lf
+*.tsx    text eol=lf
+*.css    text eol=lf
+*.html   text eol=lf
+*.blade.php text eol=lf
+*.md     text eol=lf
+*.yml    text eol=lf
+*.yaml   text eol=lf
+*.json   text eol=lf
+*.env*   text eol=lf
+*.sh     text eol=lf
+
+# Binary
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.ttf binary
+*.woff binary
+*.woff2 binary
