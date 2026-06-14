@@ -47,7 +47,7 @@ jobs:
           # Backup real composer.json
           cp composer.json composer.json.real
           # Strip scripts that need .env/DB, add dont-discover
-          python3 /tmp/_ci_composer_patch.py
+          python3 scripts/ci_composer_patch.py
           # Install with --no-scripts (CI override)
           composer install --prefer-dist --no-progress --no-security-blocking --no-scripts --no-plugins --no-autoloader
           composer dump-autoload --no-scripts --no-plugins
