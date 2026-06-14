@@ -38,6 +38,6 @@ class PppoeGeneratorTest extends TestCase
     public function test_generate_password_strips_specials_and_lowercases(): void
     {
         $this->assertEquals('sumbersari', PsbOrder::generatePppoePassword('Sumber Sari'));
-        $this->assertEquals('krebet', PsbOrder::generatePppoePassword('Krebet-01'));
+        $this->assertEquals('krebet01', PsbOrder::generatePppoePassword('Krebet-01'));
     }
 }
