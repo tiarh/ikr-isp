@@ -9,7 +9,9 @@ use App\Services\PsbStateMachine;
 use App\Services\SaleskitBridgeService;
 use App\Services\TeknisiService;
 use App\Services\WaNotificationService;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Foundation\Vite;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -26,6 +28,28 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        //
+        $this->registerBladeDirectives();
+    }
+
+    /**
+     * Manually register Blade directives that would normally be
+     * registered by package discovery (which is disabled in CI).
+     *
+     * Without these, the directives render as literal text in HTML.
+     */
+    private function registerBladeDirectives(): void
+    {
+        // Vite directives (@vite, @viteReactRefresh)
+        Blade::directive('vite', function ($expression) {
+            return "<?php echo app('Illuminate\\Foundation\\Vite')->__invoke({$expression}); ?>";
+        });
+        Blade::directive('viteReactRefresh', function () {
+            return '<?php echo app("Illuminate\\Foundation\\Vite")->reactRefresh(); ?>';
+        });
+
+        // Inertia v2 @routes directive (emits JS routes for client-side router)
+        Blade::directive('routes', function () {
+            return '<?php echo \Inertia\Inertia::routes(); ?>';
+        });
     }
 }
