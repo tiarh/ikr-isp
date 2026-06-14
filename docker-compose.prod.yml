@@ -30,6 +30,8 @@ services:
           memory: 512M
         reservations:
           memory: 256M
+    ports:
+      - "8080:8080"
     labels:
       - "coolify.managed=true"
       - "coolify.type=app"
