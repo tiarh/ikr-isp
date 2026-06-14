@@ -18,6 +18,9 @@ jobs:
       - name: Pre-create writable Laravel dirs
         run: mkdir -p bootstrap/cache storage/framework/cache/data storage/framework/sessions storage/framework/testing storage/framework/views storage/logs && chmod -R 0777 bootstrap/cache storage && ls -ld bootstrap/cache storage
       - name: Install Composer deps (CI override: dont-discover all + strip scripts)
+        env:
+          COMPOSER_NO_SCRIPTS: '1'
+          COMPOSER_DISABLE_NETWORK: '0'
         run: |
           # Backup real composer.json
           cp composer.json composer.json.real
@@ -29,7 +32,10 @@ d['scripts'] = {}
 d.setdefault('extra', {}).setdefault('laravel', {})['dont-discover'] = ['*']
 json.dump(d, open('composer.json', 'w'), indent=4)
 "
-          composer install --prefer-dist --no-progress --no-audit --no-scripts --no-plugins
+          # Use env var COMPOSER_NO_SCRIPTS=1 (in addition to --no-scripts flag)
+          composer install --prefer-dist --no-progress --no-audit --no-scripts --no-plugins --no-autoloader
+          # Manually run autoload generation (no scripts event will trigger)
+          composer dump-autoload --no-scripts --no-plugins
           # Restore real composer.json for any subsequent steps
           mv composer.json.real composer.json
       - name: PHP syntax check
