@@ -34,15 +34,24 @@ jobs:
           extensions: pdo, pdo_mysql, gd, zip, intl, bcmath
           coverage: none
 
-      - name: Cache Composer
-        uses: actions/cache@v4
-        with:
-          path: ~/.composer/cache
-          key: ${{ runner.os }}-php-${{ hashFiles('composer.json') }}
-          restore-keys: ${{ runner.os }}-php-
+      - name: Pre-create writable Laravel dirs
+        run: mkdir -p bootstrap/cache storage/framework/cache/data storage/framework/sessions storage/framework/testing storage/framework/views storage/logs && chmod -R 0777 bootstrap/cache storage && ls -ld bootstrap/cache storage
 
-      - name: Install Composer deps
-        run: composer install --prefer-dist --no-progress
+      - name: Install Composer deps (CI override: dont-discover all + strip scripts)
+        env:
+          COMPOSER_NO_SCRIPTS: '1'
+        run: |
+          cp composer.json composer.json.real
+          python3 -c "
+import json
+d = json.load(open('composer.json'))
+d['scripts'] = {}
+d.setdefault('extra', {}).setdefault('laravel', {})['dont-discover'] = ['*']
+json.dump(d, open('composer.json', 'w'), indent=4)
+"
+          composer install --prefer-dist --no-progress --no-audit --no-scripts --no-plugins --no-autoloader
+          composer dump-autoload --no-scripts --no-plugins
+          mv composer.json.real composer.json
 
       - name: PHP syntax check
         run: find app -name "*.php" -print0 | xargs -0 -n1 php -l
@@ -57,10 +66,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
 
-      - name: Install npm deps
-        run: npm ci --prefer-offline --no-audit
+      - name: Install npm deps (fallback ke install kalau lockfile gak ada)
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci --prefer-offline --no-audit
+          else
+            npm install --prefer-offline --no-audit --no-fund
+          fi
 
       - name: ESLint
         run: npx eslint resources/js --ext .ts,.tsx || echo "Lint warnings (non-blocking)"
