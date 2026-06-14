@@ -18,7 +18,7 @@ permissions:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}  # = tiarh/ikr-isp
-  IMAGE_TAG: ${{ github.sha }}
+  IMAGE_TAG: sha-${{ github.sha }}
 
 jobs:
   test:
