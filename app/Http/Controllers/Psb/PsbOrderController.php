@@ -128,16 +128,17 @@ class PsbOrderController extends Controller
         // Role check
         $user = $request->user();
         $allowed = match ($target) {
-            // bug #4 fix: CoverageOk butuh sales_leader/admin (mereka yg approve coverage)
-            \App\Enums\PsbStatus::Submitted,
-            \App\Enums\PsbStatus::CoverageOk => $user->hasAnyRole(['sales_leader', 'admin']),
-            // bug #5 fix: Rejected hanya sales_leader/leader_teknisi/admin — teknisi gak boleh reject
-            \App\Enums\PsbStatus::Rejected  => $user->hasAnyRole(['sales_leader', 'leader_teknisi', 'admin']),
-            \App\Enums\PsbStatus::Assigned  => $user->hasAnyRole(['leader_teknisi', 'admin']),
+            // Submitted: sales (input awal), sales_leader, admin
+            \App\Enums\PsbStatus::Submitted   => $user->hasAnyRole(['sales', 'sales_leader', 'admin']),
+            // CoverageOk: sales_leader/admin (mereka yg approve coverage)
+            \App\Enums\PsbStatus::CoverageOk  => $user->hasAnyRole(['sales_leader', 'admin']),
+            // Rejected: sales_leader/leader_teknisi/admin — teknisi gak boleh reject
+            \App\Enums\PsbStatus::Rejected    => $user->hasAnyRole(['sales_leader', 'leader_teknisi', 'admin']),
+            \App\Enums\PsbStatus::Assigned    => $user->hasAnyRole(['leader_teknisi', 'admin']),
             \App\Enums\PsbStatus::Provisioning,
             \App\Enums\PsbStatus::Photos,
-            \App\Enums\PsbStatus::Done       => $user->hasAnyRole(['teknisi', 'leader_teknisi', 'admin']),
-            default                          => false,
+            \App\Enums\PsbStatus::Done         => $user->hasAnyRole(['teknisi', 'leader_teknisi', 'admin']),
+            default                            => false,
         };
         if (! $allowed) {
             return back()->with('error', 'Anda tidak berhak transition ke status ini');
