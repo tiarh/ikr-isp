@@ -73,6 +73,8 @@ class PsbOrderController extends Controller
             'district'        => 'required|string',
             'package'         => 'required|string',
             'router_name'     => 'required|string|max:50',
+            'gps_lat'         => 'nullable|numeric|between:-90,90',     // bug #3 fix
+            'gps_long'        => 'nullable|numeric|between:-180,180',   // bug #3 fix
         ]);
 
         $data['status']         = PsbStatus::Submitted;
@@ -81,7 +83,17 @@ class PsbOrderController extends Controller
         $data['provisioning_status'] = 'pending';
 
         $order = PsbOrder::create($data);
-        $this->sm->transition($order, PsbStatus::Submitted, $request->user(), 'PSB submitted by sales');
+
+        // bug #2 fix: gak perlu transition() karena create() udah set status=Submitted
+        // dan transition() pertama di log akan jadi "from null" — ini redundant.
+        // Kita catat log manual dengan from=null untuk audit trail.
+        \App\Models\PsbStatusLog::create([
+            'psb_order_id' => $order->id,
+            'from_status'  => null,
+            'to_status'    => PsbStatus::Submitted->value,
+            'note'         => 'PSB submitted by sales',
+            'changed_by'   => $request->user()->id,
+        ]);
 
         return redirect()->route('psb.orders.show', $order)->with('success', 'Order submitted');
     }
@@ -116,14 +128,16 @@ class PsbOrderController extends Controller
         // Role check
         $user = $request->user();
         $allowed = match ($target) {
-            \App\Enums\PsbStatus::Submitted    => $user->hasAnyRole(['sales', 'admin']),
-            \App\Enums\PsbStatus::CoverageOk,
-            \App\Enums\PsbStatus::Rejected     => $user->hasAnyRole(['sales_leader', 'admin']),
-            \App\Enums\PsbStatus::Assigned     => $user->hasAnyRole(['leader_teknisi', 'admin']),
+            // bug #4 fix: CoverageOk butuh sales_leader/admin (mereka yg approve coverage)
+            \App\Enums\PsbStatus::Submitted,
+            \App\Enums\PsbStatus::CoverageOk => $user->hasAnyRole(['sales_leader', 'admin']),
+            // bug #5 fix: Rejected hanya sales_leader/leader_teknisi/admin — teknisi gak boleh reject
+            \App\Enums\PsbStatus::Rejected  => $user->hasAnyRole(['sales_leader', 'leader_teknisi', 'admin']),
+            \App\Enums\PsbStatus::Assigned  => $user->hasAnyRole(['leader_teknisi', 'admin']),
             \App\Enums\PsbStatus::Provisioning,
             \App\Enums\PsbStatus::Photos,
-            \App\Enums\PsbStatus::Done         => $user->hasAnyRole(['teknisi', 'leader_teknisi', 'admin']),
-            default                            => false,
+            \App\Enums\PsbStatus::Done       => $user->hasAnyRole(['teknisi', 'leader_teknisi', 'admin']),
+            default                          => false,
         };
         if (! $allowed) {
             return back()->with('error', 'Anda tidak berhak transition ke status ini');

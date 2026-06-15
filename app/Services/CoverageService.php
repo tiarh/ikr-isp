@@ -61,12 +61,50 @@ class CoverageService
             ]);
             $body = json_decode($res->getBody()->getContents(), true);
             $odps = $body['data'] ?? [];
+
+            // bug #7 fix: kalau API down, fallback ke local DB via ExternalDb
+            if (empty($odps)) {
+                return $this->findNearestOdpsFromLocal($lat, $lng, $radius);
+            }
+
             return collect($odps)->map(function ($o) use ($lat, $lng) {
                 $o['distance_m'] = $this->calculateDistance($lat, $lng, $o['lat'], $o['lng']);
                 return $o;
             })->sortBy('distance_m')->values()->all();
         } catch (\Throwable $e) {
-            Log::error('FieldOps ODP lookup failed', ['err' => $e->getMessage()]);
+            Log::error('FieldOps ODP lookup failed, trying local fallback', ['err' => $e->getMessage()]);
+            return $this->findNearestOdpsFromLocal($lat, $lng, $radius);
+        }
+    }
+
+    /**
+     * bug #7 fix: fallback ke local DB (FieldOps share table) kalau API down
+     * @return array<int, array{id:int, code:string, name:string, lat:float, lng:float, distance_m:float}>
+     */
+    private function findNearestOdpsFromLocal(float $lat, float $lng, int $radius): array
+    {
+        try {
+            $conn = \App\Services\ExternalDb::connection('fieldops');
+            if ($conn === null) {
+                return [];
+            }
+            $rows = $conn->table('odp_assets')
+                ->select('id', 'code', 'name', 'lat', 'lng')
+                ->whereNotNull('lat')
+                ->whereNotNull('lng')
+                ->get();
+            return collect($rows)->map(function ($o) use ($lat, $lng) {
+                $o = (array) $o;
+                $o['lat'] = (float) $o['lat'];
+                $o['lng'] = (float) $o['lng'];
+                $o['distance_m'] = $this->calculateDistance($lat, $lng, $o['lat'], $o['lng']);
+                return $o;
+            })->filter(fn ($o) => $o['distance_m'] <= $radius)
+              ->sortBy('distance_m')
+              ->values()
+              ->all();
+        } catch (\Throwable $e) {
+            Log::error('FieldOps local fallback failed', ['err' => $e->getMessage()]);
             return [];
         }
     }

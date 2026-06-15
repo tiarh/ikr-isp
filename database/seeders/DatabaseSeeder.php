@@ -47,9 +47,10 @@ class DatabaseSeeder extends Seeder
             $user = User::firstOrCreate(
                 ['email' => $d['email']],
                 [
-                    'name'     => $d['name'],
-                    'password' => $defaultHash,
-                    'phone'    => $d['phone'],
+                    'name'              => $d['name'],
+                    'password'          => $defaultHash,
+                    'phone'             => $d['phone'],
+                    'email_verified_at' => now(), // bug #1 fix: required for 'verified' middleware
                 ]
             );
             $user->assignRole($d['role']);

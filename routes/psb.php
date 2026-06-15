@@ -11,7 +11,7 @@ use App\Http\Controllers\Psb\ReportController;
 use App\Http\Controllers\Psb\SyncController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('psb')->name('psb.')->middleware(['auth', 'verified'])->group(function () {
+Route::prefix('psb')->name('psb.')->middleware(['auth'])->group(function () {
     // Dashboard
     Route::get('/', DashboardController::class)->name('dashboard');
 

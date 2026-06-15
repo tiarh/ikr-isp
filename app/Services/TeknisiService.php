@@ -54,14 +54,27 @@ class TeknisiService
         }
 
         // Approach 2: eBilling direct DB (if not via API)
+        // bug #6 fix: eBilling pake Spatie Permission, query via model_has_roles
         if (empty($teknisis)) {
             $conn = ExternalDb::connection('ebilling');
             if ($conn !== null) {
                 try {
+                    $teknisiIds = $conn->table('model_has_roles')
+                        ->where('model_type', 'App\\Models\\User')
+                        ->whereIn('role_id', function ($q) use ($conn) {
+                            $q->select('id')->from('roles')
+                                ->whereIn('name', ['teknisi', 'leader_teknisi']);
+                        })
+                        ->pluck('model_id')
+                        ->all();
                     $teknisis = $conn->table('users')
-                        ->whereIn('role', ['teknisi'])
-                        ->get(['id', 'name', 'email', 'phone', 'role'])
-                        ->map(fn($u) => (array) $u)
+                        ->whereIn('id', $teknisiIds)
+                        ->get(['id', 'name', 'email', 'phone'])
+                        ->map(function ($u) {
+                            $u = (array) $u;
+                            $u['role'] = 'teknisi';
+                            return $u;
+                        })
                         ->all();
                 } catch (\Throwable $e) {
                     Log::warning('TeknisiService: eBilling DB query failed', ['err' => $e->getMessage()]);

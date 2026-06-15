@@ -49,6 +49,12 @@ class SyncController extends Controller
             return back()->with('error', 'HiOS checklist harus lengkap');
         }
 
+        // bug #8 fix: validate file ada di storage, gak cuma DB path
+        $missing = $this->findMissingStorageFiles($psbOrder);
+        if (! empty($missing)) {
+            return back()->with('error', 'File hilang di storage: ' . implode(', ', $missing));
+        }
+
         // Dispatch job (async) atau sync kalau queue gak ada
         if (config('queue.default') === 'sync') {
             $result = $this->bridge->fullSync($psbOrder);
@@ -97,5 +103,30 @@ class SyncController extends Controller
                 'bai_pdf'        => (bool) $o->bai_pdf_path,
             ],
         ];
+    }
+
+    /**
+     * bug #8 fix: cek file di storage, bukan cuma path di DB
+     * Return list of missing files (filename only) for error message.
+     */
+    private function findMissingStorageFiles(PsbOrder $o): array
+    {
+        $disk = \Storage::disk('public');
+        $paths = [
+            'foto_rumah'      => $o->foto_rumah_path,
+            'foto_modem'      => $o->foto_modem_path,
+            'foto_ktp'        => $o->foto_ktp_path,
+            'foto_odp'        => $o->foto_odp_path,
+            'foto_odp_dalam'  => $o->foto_odp_dalam_path,
+            'foto_router'     => $o->foto_router_path,
+            'bai_pdf'         => $o->bai_pdf_path,
+        ];
+        $missing = [];
+        foreach ($paths as $label => $path) {
+            if ($path && ! $disk->exists($path)) {
+                $missing[] = $label;
+            }
+        }
+        return $missing;
     }
 }
