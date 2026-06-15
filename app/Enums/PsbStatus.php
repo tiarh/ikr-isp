@@ -63,7 +63,8 @@ enum PsbStatus: string
             self::Provisioning => in_array($target, [self::Photos, self::Rejected]),
             // Reject flow jawaban #6: rejected → balik ke provisioning
             self::Rejected     => $target === self::Provisioning,
-            self::Photos       => in_array($target, [self::Done, self::Provisioning]),
+            // bug #R-fix: tambah Rejected dari Photos (teknisi bisa reject jika foto salah / BAI invalid)
+            self::Photos       => in_array($target, [self::Done, self::Provisioning, self::Rejected]),
             self::Done         => false, // terminal
         };
     }
