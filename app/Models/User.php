@@ -31,8 +31,11 @@ class User extends Authenticatable
     public function teknisiOpenTicketCount(): int
     {
         try {
-            return \DB::connection('ebilling')
-                ->table('support_tickets')
+            $conn = \App\Services\ExternalDb::connection('ebilling');
+            if ($conn === null) {
+                return 0;
+            }
+            return $conn->table('support_tickets')
                 ->where('teknisi_id', $this->id)
                 ->whereNotIn('status', ['closed', 'resolved'])
                 ->count();

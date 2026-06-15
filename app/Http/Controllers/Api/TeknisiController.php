@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\ExternalDb;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 
@@ -14,16 +15,19 @@ class TeknisiController extends Controller
         // Hanya teknisi (bukan leader_teknisi) yang dipakai utk assignment step 3.
         // Leader teknisi bisa override manual via UI.
         $teknisis = User::role(['teknisi'])
-            ->get(['id', 'name', 'email'])
+            ->get(['id', 'name', 'email', 'phone'])
             ->map(function ($user) {
-                try {
-                    $activeTickets = DB::connection('ebilling')
-                        ->table('support_tickets')
-                        ->where('teknisi_id', $user->id)
-                        ->whereNotIn('status', ['closed', 'resolved'])
-                        ->count();
-                } catch (\Throwable $e) {
-                    $activeTickets = 0;
+                $activeTickets = 0;
+                $ebillingConn = ExternalDb::connection('ebilling');
+                if ($ebillingConn !== null) {
+                    try {
+                        $activeTickets = $ebillingConn->table('support_tickets')
+                            ->where('teknisi_id', $user->id)
+                            ->whereNotIn('status', ['closed', 'resolved'])
+                            ->count();
+                    } catch (\Throwable $e) {
+                        $activeTickets = 0;
+                    }
                 }
                 return [
                     'id'            => $user->id,

@@ -28,7 +28,12 @@ class AssignmentController extends Controller
             ->get();
 
         // List teknisi, sort by open ticket count (idle first)
-        $teknisis = $this->teknisi->list();
+        // TeknisiService sudah punya fallback ke local user kalau eBilling gak reachable
+        try {
+            $teknisis = $this->teknisi->list();
+        } catch (\Throwable $e) {
+            $teknisis = [];
+        }
 
         return Inertia::render('Psb/Assignment', [
             'orders'   => $orders,
