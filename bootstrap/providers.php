@@ -5,5 +5,5 @@ return [
     App\Providers\PsbServiceProvider::class,
     Livewire\LivewireServiceProvider::class,
     Inertia\ServiceProvider::class,
-    Tightenco\Ziggy\ZiggyServiceProvider::class,
+    Tighten\Ziggy\ZiggyServiceProvider::class,
 ];
