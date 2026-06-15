@@ -44,7 +44,14 @@ class FieldOpsController extends Controller
             $res = $http->get('/olt-assets', ['query' => $request->only('area_id')]);
             return response()->json(json_decode($res->getBody()->getContents(), true));
         } catch (\Throwable $e) {
-            return response()->json(['data' => [], 'error' => $e->getMessage()], 500);
+            // FieldOps service not yet deployed / unreachable. Return empty data
+            // with 200 instead of 500 — don't break callers waiting for FieldOps
+            // integration. Error logged for ops awareness.
+            \Log::warning('FieldOps OLT assets lookup failed', [
+                'err' => $e->getMessage(),
+                'url' => config('psb.fieldops.api_url'),
+            ]);
+            return response()->json(['data' => [], 'error' => $e->getMessage()]);
         }
     }
 }
