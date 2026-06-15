@@ -45,15 +45,18 @@ class PppoeGeneratorService
 
     /**
      * Build username from customer name, RT, RW, ODP code.
-     * Format: {NAME}_RTxx_RWxx_XX
+     * Format: {NAME}_RTxx_RWxx_{ODP_SEGMENT}
      *
-     * ODP segment: ambil 2 digit terakhir dari angka di odp_code, padded ke 2 digit.
-     *   ODP-MLG-001 → 01
-     *   ODP-MLG-005 → 05
-     *   ODP-MLG-012 → 12
-     *   MGL-99      → 99
-     *   MGL-5       → 05
-     *   (no digits) → 00
+     * ODP segment rules (updated 2026-06-15):
+     *   - Kalau odp_code punya format 'X.Y' (X.Y dipisah titik):
+     *       pakai 'X.Y' as-is  →  ODP-GDG-1.1 → "1.1"
+     *   - Kalau gak ada titik, ambil 2 digit terakhir dari semua digit, padded:
+     *       ODP-MLG-001 → "01"
+     *       MGL-005     → "05"
+     *       5           → "05"
+     *   - Fallback: "00"
+     *
+     * Note: PPPoE username boleh mengandung '.' — RADIUS/MikroTik accept.
      */
     public function buildUsername(PsbOrder $order): string
     {
@@ -65,24 +68,35 @@ class PppoeGeneratorService
     }
 
     /**
-     * Extract 2-digit ODP number from a freeform code.
-     *   "ODP-MLG-001" → "01"  (2 digit terakhir)
-     *   "MGL-005"     → "05"
-     *   "012"         → "12"  (3+ digit, ambil 2 terakhir)
-     *   "5"           → "05"
-     *   "" / null     → "00"  (fallback)
+     * Extract ODP segment.
+     *   Format "X.Y" (X.Y dipisah titik) → pakai as-is
+     *     "ODP-GDG-1.1"  → "1.1"
+     *     "ODP-GDG-1.10" → "1.10"
+     *     "GDG-2.3"      → "2.3"
+     *   Tanpa titik → ambil 2 digit terakhir dari semua digit, padded
+     *     "ODP-MLG-001"  → "01"
+     *     "MGL-005"      → "05"
+     *     "012"          → "12"
+     *     "5"            → "05"
+     *   Fallback: "00"
      */
     public function extractOdpNumber(?string $odpCode): string
     {
         if (empty($odpCode)) {
             return '00';
         }
-        // Ambil semua digit, susun ulang
+
+        // Rule 1: ada format X.Y (digit.digit) → pakai as-is segment terakhir
+        // Tangkap pola: trailing atau anywhere "D+.D+" (digit.digit)
+        if (preg_match('/(\d+\.\d+)/', $odpCode, $m)) {
+            return $m[1];
+        }
+
+        // Rule 2: gak ada titik → 2 digit terakhir dari digit, padded
         $digits = preg_replace('/[^0-9]/', '', $odpCode);
         if (empty($digits)) {
             return '00';
         }
-        // 2 digit terakhir
         $tail = strlen($digits) >= 2
             ? substr($digits, -2)
             : str_pad($digits, 2, '0', STR_PAD_LEFT);
