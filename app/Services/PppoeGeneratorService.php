@@ -45,15 +45,48 @@ class PppoeGeneratorService
 
     /**
      * Build username from customer name, RT, RW, ODP code.
-     * Format: {NAME}_RTxx_RWxx_ODP
+     * Format: {NAME}_RTxx_RWxx_XX
+     *
+     * ODP segment: ambil 2 digit terakhir dari angka di odp_code, padded ke 2 digit.
+     *   ODP-MLG-001 → 01
+     *   ODP-MLG-005 → 05
+     *   ODP-MLG-012 → 12
+     *   MGL-99      → 99
+     *   MGL-5       → 05
+     *   (no digits) → 00
      */
     public function buildUsername(PsbOrder $order): string
     {
         $name = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $order->customer_name ?? ''));
         $rt   = str_pad((string) ($order->rt ?? '00'), 2, '0', STR_PAD_LEFT);
         $rw   = str_pad((string) ($order->rw ?? '00'), 2, '0', STR_PAD_LEFT);
-        $odp  = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $order->odp_code ?? 'ODP'));
+        $odp  = $this->extractOdpNumber($order->odp_code ?? null);
         return "{$name}_RT{$rt}_RW{$rw}_{$odp}";
+    }
+
+    /**
+     * Extract 2-digit ODP number from a freeform code.
+     *   "ODP-MLG-001" → "01"  (2 digit terakhir)
+     *   "MGL-005"     → "05"
+     *   "012"         → "12"  (3+ digit, ambil 2 terakhir)
+     *   "5"           → "05"
+     *   "" / null     → "00"  (fallback)
+     */
+    public function extractOdpNumber(?string $odpCode): string
+    {
+        if (empty($odpCode)) {
+            return '00';
+        }
+        // Ambil semua digit, susun ulang
+        $digits = preg_replace('/[^0-9]/', '', $odpCode);
+        if (empty($digits)) {
+            return '00';
+        }
+        // 2 digit terakhir
+        $tail = strlen($digits) >= 2
+            ? substr($digits, -2)
+            : str_pad($digits, 2, '0', STR_PAD_LEFT);
+        return $tail;
     }
 
     /**
