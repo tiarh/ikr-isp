@@ -29,7 +29,7 @@ class PppoeGeneratorService
     public function generate(PsbOrder $order): array
     {
         $user = $this->buildUsername($order);
-        $pass = $this->generatePassword();
+        $pass = $this->generatePassword($order);  // bug #R-fix: pass $order so password = router_name (bukan random fallback)
 
         $order->update([
             'pppoe_user'          => $user,
