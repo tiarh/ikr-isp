@@ -56,6 +56,22 @@ return [
                 \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
             ],
         ],
+
+        // ── FIELDOPS (read-only) — ODP/ODC assets (opsional DB fallback) ──
+        'fieldops' => [
+            'driver'   => 'mysql',
+            'host'     => env('FIELDOPS_DB_HOST', '127.0.0.1'),
+            'port'     => env('FIELDOPS_DB_PORT', '3306'),
+            'database' => env('FIELDOPS_DB_DATABASE', 'fieldops'),
+            'username' => env('FIELDOPS_DB_USERNAME'),
+            'password' => env('FIELDOPS_DB_PASSWORD'),
+            'charset'  => 'utf8mb4',
+            'collation'=> 'utf8mb4_unicode_ci',
+            'prefix'   => '',
+            'prefix_indexes' => true,
+            'strict'   => true,
+            'engine'   => 'InnoDB',
+        ],
     ],
 
     'migrations' => [

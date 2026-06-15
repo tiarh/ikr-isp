@@ -13,6 +13,7 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
 
     // FieldOps
     Route::get('/odp-assets', [FieldOpsController::class, 'odpAssets']);
+    Route::get('/odc-assets', [FieldOpsController::class, 'odcAssets']); // ODP-A
     Route::get('/olt-assets', [FieldOpsController::class, 'oltAssets']);
 
     // OLT provisioning

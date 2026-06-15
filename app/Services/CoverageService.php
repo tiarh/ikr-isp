@@ -119,4 +119,37 @@ class CoverageService
             return null;
         }
     }
+
+    /**
+     * ODP-A: tambah ODC fetch (Optical Distribution Cabinet — parent dari ODP).
+     * FieldOps endpoint: GET /odc-assets?lat=&lng=&radius=
+     * Return sama shape dgn ODP (id, code, name, lat, lng, distance_m).
+     *
+     * @return array<int, array{id:int, code:string, name:string, lat:float, lng:float, distance_m:float}>
+     */
+    public function findNearestOdcs(float $lat, float $lng, ?int $radius = null): array
+    {
+        $radius = $radius ?? $this->defaultRadius;
+        try {
+            $res = $this->http->get('/odc-assets', [
+                'query' => [
+                    'lat'    => $lat,
+                    'lng'    => $lng,
+                    'radius' => $radius,
+                ],
+            ]);
+            $body = json_decode($res->getBody()->getContents(), true);
+            $odcs = $body['data'] ?? [];
+            if (empty($odcs)) {
+                return [];
+            }
+            return collect($odcs)->map(function ($o) use ($lat, $lng) {
+                $o['distance_m'] = $this->calculateDistance($lat, $lng, $o['lat'], $o['lng']);
+                return $o;
+            })->sortBy('distance_m')->values()->all();
+        } catch (\Throwable $e) {
+            Log::warning('FieldOps ODC lookup failed', ['err' => $e->getMessage()]);
+            return [];
+        }
+    }
 }

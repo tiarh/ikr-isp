@@ -54,4 +54,23 @@ class FieldOpsController extends Controller
             return response()->json(['data' => [], 'error' => $e->getMessage()]);
         }
     }
+
+    /**
+     * ODP-A: ODC lookup (Optical Distribution Cabinet).
+     * GET /api/v1/odc-assets?lat=&lng=&radius=
+     */
+    public function odcAssets(Request $request): JsonResponse
+    {
+        $request->validate([
+            'lat'    => 'required|numeric',
+            'lng'    => 'required|numeric',
+            'radius' => 'nullable|integer',
+        ]);
+        $odcs = $this->coverage->findNearestOdcs(
+            (float) $request->lat,
+            (float) $request->lng,
+            (int) ($request->radius ?? 300),
+        );
+        return response()->json(['data' => $odcs]);
+    }
 }
