@@ -118,7 +118,14 @@ class UserController extends Controller
     public function destroy(User $user): RedirectResponse
     {
         // Protect admin user from deletion
-        if ($user->hasRole('admin') && User::role('admin')->count() === 1) {
+        // Use direct query instead of User::role() to avoid RoleDoesNotExist
+        // when Spatie role context is misaligned
+        $adminCount = \DB::table('model_has_roles')
+            ->where('role_id', function ($q) {
+                $q->select('id')->from('roles')->where('name', 'admin');
+            })
+            ->count();
+        if ($user->hasRole('admin') && $adminCount === 1) {
             return back()->with('error', 'Cannot delete the only admin user');
         }
 

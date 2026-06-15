@@ -70,9 +70,18 @@ class TeknisiService
         }
 
         // Approach 3: Fallback to local IKR-ISP users with role 'teknisi'
+        // Use direct query to avoid Spatie RoleDoesNotExist when guard context
+        // is sanctum (in API context) but roles are stored for 'web' guard.
         if (empty($teknisis)) {
             try {
-                $teknisis = User::role(['teknisi'])
+                $teknisiIds = \DB::table('model_has_roles')
+                    ->where('role_id', function ($q) {
+                        $q->select('id')->from('roles')->where('name', 'teknisi');
+                    })
+                    ->pluck('model_id')
+                    ->all();
+
+                $teknisis = User::whereIn('id', $teknisiIds)
                     ->get(['id', 'name', 'email', 'phone'])
                     ->map(fn($u) => [
                         'id' => $u->id, 'name' => $u->name, 'email' => $u->email,

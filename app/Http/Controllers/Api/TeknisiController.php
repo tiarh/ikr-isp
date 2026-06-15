@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\ExternalDb;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
 
 class TeknisiController extends Controller
 {
@@ -14,7 +13,19 @@ class TeknisiController extends Controller
     {
         // Hanya teknisi (bukan leader_teknisi) yang dipakai utk assignment step 3.
         // Leader teknisi bisa override manual via UI.
-        $teknisis = User::role(['teknisi'])
+        //
+        // NOTE: pakai direct query ke model_has_roles instead of User::role()
+        // karena Spatie role lookup by default pakai 'web' guard, tapi API pakai
+        // 'sanctum' guard. Kalau pakai User::role() tanpa specify guard, dan
+        // roles belum di-register di sanctum guard, akan throw RoleDoesNotExist.
+        $teknisiIds = \DB::table('model_has_roles')
+            ->where('role_id', function ($q) {
+                $q->select('id')->from('roles')->where('name', 'teknisi');
+            })
+            ->pluck('model_id')
+            ->all();
+
+        $teknisis = User::whereIn('id', $teknisiIds)
             ->get(['id', 'name', 'email', 'phone'])
             ->map(function ($user) {
                 $activeTickets = 0;
